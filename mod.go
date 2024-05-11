@@ -42,7 +42,11 @@ func RunUpdate(path string, output io.Writer, args ...string) error {
 	finalArgs = append(finalArgs, path+"@latest")
 
 	cmd := exec.Command("go", finalArgs...)
+
+	if output == nil {
+		output = io.Discard
+	}
 	cmd.Stdout = output
-	fmt.Println(cmd.Args)
+	fmt.Fprintln(output, cmd.Args)
 	return cmd.Run()
 }
