@@ -12,7 +12,7 @@ import (
 	rcsversion "rsc.io/goversion/version"
 )
 
-const VERSION = "v0.1.0"
+const VERSION = "v0.1.1"
 
 var (
 	trimpath bool
@@ -21,6 +21,7 @@ var (
 	showVersion bool
 	verbose     bool
 	dryRun      bool
+	reInstall   bool
 )
 
 func main() {
@@ -29,10 +30,16 @@ func main() {
 	flag.BoolVar(&trimpath, "trimpath", true, "")
 	flag.StringVar(&ldflags, "ldflags", "-s -w", "")
 	flag.BoolVar(&dryRun, "d", false, "Dry run. Just check update.")
+	flag.BoolVar(&reInstall, "r", false, "Re-install all binaries.")
 	flag.Parse()
 
 	if showVersion {
 		fmt.Printf("Version: %s\n", VERSION)
+		os.Exit(0)
+		return
+	}
+	if dryRun && reInstall {
+		fmt.Println("Can't enable dry run and re-install at the same time!")
 		os.Exit(0)
 		return
 	}
@@ -60,7 +67,7 @@ func main() {
 		}
 	}
 
-	installArgs := []string{fmt.Sprintf("-ldflags=\"%s\"", ldflags)}
+	installArgs := []string{"-ldflags", "-w -s"}
 	if trimpath {
 		installArgs = append(installArgs, "-trimpath")
 	}
@@ -81,24 +88,28 @@ func main() {
 			continue
 		}
 
-		latestVersion, err := goinstallupdate.LatestVersion(bi.Main.Path)
-		if err != nil {
-			fmt.Printf("Failed to get latest version of %s: %v\n", bi.Path, err)
-			continue
-		}
+		var latestVersion string
 
-		switch compareVersion(bi.Main.Version, latestVersion) {
-		case 0:
-			fmt.Printf("%s is up to date.\n", bi.Path)
-			continue
-		case 1:
-			fmt.Printf("%s is newer than remote.\n", bi.Path)
-			continue
-		}
+		if !reInstall {
+			latestVersion, err = goinstallupdate.LatestVersion(bi.Main.Path)
+			if err != nil {
+				fmt.Printf("Failed to get latest version of %s: %v\n", bi.Path, err)
+				continue
+			}
 
-		if dryRun {
-			fmt.Printf("%s %s can update to %s\n", bi.Path, bi.Main.Version, latestVersion)
-			continue
+			switch compareVersion(bi.Main.Version, latestVersion) {
+			case 0:
+				fmt.Printf("%s is up to date.\n", bi.Path)
+				continue
+			case 1:
+				fmt.Printf("%s is newer than remote.\n", bi.Path)
+				continue
+			}
+
+			if dryRun {
+				fmt.Printf("%s %s can update to %s\n", bi.Path, bi.Main.Version, latestVersion)
+				continue
+			}
 		}
 
 		fmt.Printf("Updating %s %s to %s\n", bi.Path, bi.Main.Version, latestVersion)
@@ -109,7 +120,7 @@ func main() {
 		} else {
 			writer = io.Discard
 		}
-		err = goinstallupdate.RunUpdate(bin, writer, installArgs...)
+		err = goinstallupdate.RunUpdate(bi.Path, writer, installArgs...)
 		if err != nil {
 			fmt.Println(err)
 			continue

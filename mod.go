@@ -34,12 +34,13 @@ func LatestVersion(module string) (version string, err error) {
 }
 
 func RunUpdate(path string, output io.Writer, args ...string) error {
-	finalArgs := make([]string, 2, 2+len(args))
-	finalArgs[0] = "install"
-	finalArgs[1] = path + "@latest"
+	finalArgs := make([]string, 0, 2+len(args))
+	finalArgs = append(finalArgs, "install")
 	finalArgs = append(finalArgs, args...)
+	finalArgs = append(finalArgs, path+"@latest")
 
 	cmd := exec.Command("go", finalArgs...)
 	cmd.Stdout = output
+	fmt.Println(cmd.Args)
 	return cmd.Run()
 }
