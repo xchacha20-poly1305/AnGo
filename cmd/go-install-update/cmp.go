@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// goBins returns $GOBIN from env.
 func goBins() []string {
 	binFromEnv := cmp.Or(
 		os.Getenv("GOBIN"),
@@ -18,8 +19,8 @@ func goBins() []string {
 	return filepath.SplitList(binFromEnv)
 }
 
+// compareVersion used to compare the "fake version" for go module. The "fake version" looks like v0.0.0-20240506185415-9bf2ced13842
 func compareVersion(localVersion, remoteVersion string) int {
-	// v0.0.0-20240506185415-9bf2ced13842
 	localSlices := strings.Split(localVersion, "-")
 	remoteSlices := strings.Split(remoteVersion, "-")
 	if len(localSlices) == 3 || len(remoteSlices) == 3 {

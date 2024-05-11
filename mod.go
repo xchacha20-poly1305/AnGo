@@ -12,6 +12,7 @@ const (
 	LatestVersionAPI = "https://proxy.golang.org/%s/@latest"
 )
 
+// LatestVersion returns the latest version of module. If there is some problem of using API, it will return error.
 func LatestVersion(module string) (version string, err error) {
 	resp, err := http.Get(fmt.Sprintf(LatestVersionAPI, module))
 	if err != nil {
@@ -33,6 +34,7 @@ func LatestVersion(module string) (version string, err error) {
 	return version, nil
 }
 
+// RunUpdate use go command to update GOBIN. output used to show output.
 func RunUpdate(path string, output io.Writer, args ...string) error {
 	finalArgs := make([]string, 0, 2+len(args))
 	finalArgs = append(finalArgs, "install")

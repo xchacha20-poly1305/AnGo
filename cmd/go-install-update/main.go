@@ -25,8 +25,8 @@ var (
 )
 
 func main() {
-	flag.BoolVar(&showVersion, "V", false, "")
-	flag.BoolVar(&verbose, "v", false, "go install -v")
+	flag.BoolVar(&showVersion, "V", false, "Print version.")
+	flag.BoolVar(&verbose, "v", false, "Show verbose info. And append -v flag to go install")
 	flag.BoolVar(&trimpath, "trimpath", true, "")
 	flag.StringVar(&ldflags, "ldflags", "-s -w", "")
 	flag.BoolVar(&dryRun, "d", false, "Dry run. Just check update.")

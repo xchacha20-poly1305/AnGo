@@ -2,6 +2,8 @@
 
 Update all of GOBIN.
 
+Go-install-update provides an easy way to manage your GOBIN. You can install module with `-trimpath` and `-ldflags` flags, and automatically update them.
+
 # Usage
 
 Install by go:
@@ -20,14 +22,14 @@ command:
 
 ```shell
 Usage of go-install-update:
-  -V	
+  -V	Print version.
   -d	Dry run. Just check update.
   -ldflags string
     	 (default "-s -w")
   -r	Re-install all binaries.
   -trimpath
     	 (default true)
-  -v	go install -v
+  -v	Show verbose info. And append -v flag to go install
 
 ```
 
