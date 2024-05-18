@@ -12,7 +12,7 @@ import (
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VERSION = "v0.1.1"
+const VERSION = "v0.2.0"
 
 var (
 	trimpath bool
@@ -96,8 +96,16 @@ func main() {
 				fmt.Printf("%s is up to date.\n", localInfo.Path)
 				continue
 			case 1:
-				fmt.Printf("%s is newer than remote.\n", localInfo.Path)
-				continue
+				unstableVersion, err := goinstallupdate.UnstableVersion(localInfo.Main.Path)
+				if err != nil {
+					fmt.Printf("Faild to get unstable version of %s: %v\n", localInfo.Path, err)
+					continue
+				}
+				if gvgo.Compare(unstableVersion, localInfo.Main.Version) != -1 {
+					fmt.Printf("%s is newer than remote.\n", localInfo.Path)
+					continue
+				}
+				latestVersion = unstableVersion
 			}
 
 			if dryRun {

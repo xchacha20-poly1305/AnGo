@@ -2,14 +2,20 @@ package goinstallupdate
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os/exec"
+	"slices"
+	"strings"
+
+	"github.com/xchacha20-poly1305/gvgo"
 )
 
 const (
 	LatestVersionAPI = "https://proxy.golang.org/%s/@latest"
+	VersionListAPI   = "https://proxy.golang.org/%s/@v/list"
 )
 
 // LatestVersion returns the latest version of module. If there is some problem of using API, it will return error.
@@ -32,6 +38,36 @@ func LatestVersion(module string) (version string, err error) {
 		return "", fmt.Errorf("not found latest version for %s", module)
 	}
 	return version, nil
+}
+
+// UnstableVersion gets the test version.
+func UnstableVersion(module string) (version string, err error) {
+	resp, err := http.Get(fmt.Sprintf(VersionListAPI, module))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	all, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	list := strings.Split(string(all), "\n")
+
+	versionList := make([]gvgo.Version, 0, len(list))
+	for _, v := range list {
+		vs, err := gvgo.Parse(v)
+		if err != nil {
+			continue
+		}
+		versionList = append(versionList, vs)
+	}
+	if len(versionList) == 0 {
+		return "", errors.New("not have version list")
+	}
+	slices.SortFunc(versionList, gvgo.CompareVersion)
+
+	return versionList[len(versionList)-1].String(), nil
 }
 
 // RunUpdate use go command to update GOBIN. output used to show output.
