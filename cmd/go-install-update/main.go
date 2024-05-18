@@ -1,15 +1,15 @@
 package main
 
 import (
+	"debug/buildinfo"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 
 	goinstallupdate "github.com/xchacha20-poly1305/go-install-update"
-	rcsversion "rsc.io/goversion/version"
+	"github.com/xchacha20-poly1305/gvgo"
 )
 
 const VERSION = "v0.1.1"
@@ -76,43 +76,37 @@ func main() {
 	}
 
 	for _, bin := range bins {
-		localVersion, err := rcsversion.ReadExe(bin)
+		localInfo, err := buildinfo.ReadFile(bin)
 		if err != nil {
 			fmt.Printf("Failed to read exe: %v\n", err)
-			continue
-		}
-
-		bi, err := debug.ParseBuildInfo(localVersion.ModuleInfo)
-		if err != nil {
-			fmt.Printf("Failed to parse build info: %v\n", err)
 			continue
 		}
 
 		var latestVersion string
 
 		if !reInstall {
-			latestVersion, err = goinstallupdate.LatestVersion(bi.Main.Path)
+			latestVersion, err = goinstallupdate.LatestVersion(localInfo.Main.Path)
 			if err != nil {
-				fmt.Printf("Failed to get latest version of %s: %v\n", bi.Path, err)
+				fmt.Printf("Failed to get latest version of %s: %v\n", localInfo.Path, err)
 				continue
 			}
 
-			switch compareVersion(bi.Main.Version, latestVersion) {
+			switch gvgo.Compare(localInfo.Main.Version, latestVersion) {
 			case 0:
-				fmt.Printf("%s is up to date.\n", bi.Path)
+				fmt.Printf("%s is up to date.\n", localInfo.Path)
 				continue
 			case 1:
-				fmt.Printf("%s is newer than remote.\n", bi.Path)
+				fmt.Printf("%s is newer than remote.\n", localInfo.Path)
 				continue
 			}
 
 			if dryRun {
-				fmt.Printf("%s %s can update to %s\n", bi.Path, bi.Main.Version, latestVersion)
+				fmt.Printf("%s %s can update to %s\n", localInfo.Path, localInfo.Main.Version, latestVersion)
 				continue
 			}
 		}
 
-		fmt.Printf("Updating %s %s to %s\n", bi.Path, bi.Main.Version, latestVersion)
+		fmt.Printf("Updating %s %s to %s\n", localInfo.Path, localInfo.Main.Version, latestVersion)
 
 		var writer io.Writer
 		if verbose {
@@ -120,7 +114,7 @@ func main() {
 		} else {
 			writer = io.Discard
 		}
-		err = goinstallupdate.RunUpdate(bi.Path, writer, installArgs...)
+		err = goinstallupdate.RunUpdate(localInfo.Path, writer, installArgs...)
 		if err != nil {
 			fmt.Println(err)
 			continue

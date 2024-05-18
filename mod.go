@@ -47,6 +47,6 @@ func RunUpdate(path string, output io.Writer, args ...string) error {
 		output = io.Discard
 	}
 	cmd.Stdout = output
-	fmt.Fprintln(output, cmd.Args)
+	_, _ = fmt.Fprintln(output, cmd.Args)
 	return cmd.Run()
 }
