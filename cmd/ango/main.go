@@ -16,7 +16,7 @@ import (
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VERSION = "v0.5.0"
+const VERSION = "v0.6.0"
 
 const timeout = 10 * time.Second
 
@@ -143,7 +143,7 @@ func main() {
 			continue
 		}
 
-		if err := ango.RunUpdate(update.path, output, installArgs...); err != nil {
+		if err := ango.RunUpdate(update.path, update.targetVersion, output, installArgs...); err != nil {
 			fmt.Printf("❌ Failed to update %s: %v\n", update.path, err)
 			continue
 		}

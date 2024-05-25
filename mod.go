@@ -89,11 +89,11 @@ func UnstableVersion(ctx context.Context, module string) (version string, err er
 }
 
 // RunUpdate use go command to update GOBIN. output used to show output.
-func RunUpdate(path string, output io.Writer, args ...string) error {
+func RunUpdate(path, version string, output io.Writer, args ...string) error {
 	finalArgs := make([]string, 0, 2+len(args))
 	finalArgs = append(finalArgs, "install")
 	finalArgs = append(finalArgs, args...)
-	finalArgs = append(finalArgs, path+"@latest")
+	finalArgs = append(finalArgs, path+"@"+version)
 
 	cmd := exec.Command("go", finalArgs...)
 
