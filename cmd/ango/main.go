@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/xchacha20-poly1305/ango"
@@ -51,26 +52,75 @@ func main() {
 		return
 	}
 
-	binDirs := goBins()
-	if len(binDirs) == 0 {
-		fmt.Println("Not found GOBIN!")
-		os.Exit(1)
-		return
-	}
-
-	var bins []string
-	for _, binDir := range binDirs {
-		dirEntries, err := os.ReadDir(binDir)
-		if err != nil {
-			fmt.Printf("Failed to read dir: %v\n", err)
-			continue
+	var updateList []updateInfo
+	if len(flag.Args()) > 0 {
+		updateList = make([]updateInfo, 0, len(flag.Args()))
+		for _, path := range flag.Args() {
+			pathParts := strings.SplitN(path, "@", 2)
+			if len(pathParts) < 2 || pathParts[1] == "" {
+				pathParts = []string{pathParts[0], "latest"}
+			}
+			updateList = append(updateList, updateInfo{pathParts[0], pathParts[1]})
+		}
+	} else {
+		binDirs := goBins()
+		if len(binDirs) == 0 {
+			fmt.Println("Not found GOBIN!")
+			os.Exit(1)
+			return
 		}
 
-		for _, dirEntry := range dirEntries {
-			if dirEntry.IsDir() {
+		var bins []string
+		for _, binDir := range binDirs {
+			dirEntries, err := os.ReadDir(binDir)
+			if err != nil {
+				fmt.Printf("Failed to read dir: %v\n", err)
 				continue
 			}
-			bins = append(bins, filepath.Join(binDir, dirEntry.Name()))
+
+			for _, dirEntry := range dirEntries {
+				if dirEntry.IsDir() {
+					continue
+				}
+				bins = append(bins, filepath.Join(binDir, dirEntry.Name()))
+			}
+		}
+
+		var updateListCap int
+		if reinstall {
+			updateListCap = len(bins)
+		} else {
+			updateListCap = len(bins) / 3 // Most time large.
+		}
+		updateList = make([]updateInfo, 0, updateListCap)
+
+		for _, bin := range bins {
+			localInfo, err := buildinfo.ReadFile(bin)
+			if err != nil {
+				fmt.Printf("⚠️ Failed to read version of %s: %v\n", localInfo.Path, err)
+				continue
+			}
+
+			if reinstall {
+				updateList = append(updateList, updateInfo{localInfo.Path, localInfo.Main.Version})
+				continue
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			latestVersion, err := ango.LatestVersion(ctx, localInfo.Main.Path)
+			cancel()
+			if err != nil {
+				fmt.Printf("⚠️ Failed to get latest version of %s: %v\n", localInfo.Main.Path, err)
+				continue
+			}
+
+			appendable, err := compareLocal(localInfo, latestVersion)
+			if err != nil {
+				fmt.Printf("❓ Try compare version %s: %v\n", localInfo.Path, err)
+				continue
+			}
+
+			updateList = append(updateList, appendable)
 		}
 	}
 
@@ -81,44 +131,6 @@ func main() {
 	if verbose {
 		installArgs = append(installArgs, "-v")
 	}
-
-	var updateListCap int
-	if reinstall {
-		updateListCap = len(bins)
-	} else {
-		updateListCap = len(bins) / 3 // Most time large.
-	}
-	updateList := make([]updateInfo, 0, updateListCap)
-
-	for _, bin := range bins {
-		localInfo, err := buildinfo.ReadFile(bin)
-		if err != nil {
-			fmt.Printf("⚠️ Failed to read version of %s: %v\n", localInfo.Path, err)
-			continue
-		}
-
-		if reinstall {
-			updateList = append(updateList, updateInfo{localInfo.Path, localInfo.Main.Version})
-			continue
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		latestVersion, err := ango.LatestVersion(ctx, localInfo.Main.Path)
-		cancel()
-		if err != nil {
-			fmt.Printf("⚠️ Failed to get latest version of %s: %v\n", localInfo.Main.Path, err)
-			continue
-		}
-
-		appendable, err := compareLocal(localInfo, latestVersion)
-		if err != nil {
-			fmt.Printf("❓ Try compare version %s: %v\n", localInfo.Path, err)
-			continue
-		}
-
-		updateList = append(updateList, appendable)
-	}
-
 	var output io.Writer
 	if verbose {
 		output = os.Stdout
