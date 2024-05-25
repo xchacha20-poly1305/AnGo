@@ -21,7 +21,11 @@ const (
 
 // LatestVersion returns the latest version of module. If there is some problem of using API, it will return error.
 func LatestVersion(ctx context.Context, module string) (version string, err error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(LatestVersionAPI, module), nil)
+	request, err := http.NewRequestWithContext(ctx,
+		http.MethodGet,
+		fmt.Sprintf(LatestVersionAPI, strings.ToLower(module)),
+		nil,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -47,7 +51,12 @@ func LatestVersion(ctx context.Context, module string) (version string, err erro
 
 // UnstableVersion gets the test version. If not have test version, it will gets the latest version.
 func UnstableVersion(ctx context.Context, module string) (version string, err error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(VersionListAPI, module), nil)
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf(VersionListAPI, strings.ToLower(module)),
+		nil,
+	)
 	if err != nil {
 		return "", err
 	}

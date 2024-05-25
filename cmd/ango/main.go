@@ -16,7 +16,7 @@ import (
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VERSION = "v0.4.0"
+const VERSION = "v0.5.0"
 
 const timeout = 10 * time.Second
 
