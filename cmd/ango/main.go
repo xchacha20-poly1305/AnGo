@@ -53,13 +53,13 @@ func main() {
 
 	var bins []string
 	for _, binDir := range binDirs {
-		dirEnrties, err := os.ReadDir(binDir)
+		dirEntries, err := os.ReadDir(binDir)
 		if err != nil {
 			fmt.Printf("Failed to read dir: %v\n", err)
 			continue
 		}
 
-		for _, dirEntry := range dirEnrties {
+		for _, dirEntry := range dirEntries {
 			if dirEntry.IsDir() {
 				continue
 			}
@@ -67,7 +67,7 @@ func main() {
 		}
 	}
 
-	installArgs := []string{"-ldflags", "-w -s"}
+	installArgs := []string{"-ldflags", ldflags}
 	if trimpath {
 		installArgs = append(installArgs, "-trimpath")
 	}
