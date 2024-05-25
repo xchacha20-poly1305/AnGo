@@ -26,7 +26,8 @@ var (
 	showVersion bool
 	verbose     bool
 	dryRun      bool
-	reInstall   bool
+	reinstall   bool
+	pathGoBin   string
 )
 
 func main() {
@@ -35,7 +36,8 @@ func main() {
 	flag.BoolVar(&trimpath, "trimpath", true, "")
 	flag.StringVar(&ldflags, "ldflags", "-s -w", "")
 	flag.BoolVar(&dryRun, "d", false, "Dry run. Just check update.")
-	flag.BoolVar(&reInstall, "r", false, "Re-install all binaries.")
+	flag.BoolVar(&reinstall, "r", false, "Re-install all binaries.")
+	flag.StringVar(&pathGoBin, "p", "", "Path of GOBIN.")
 	flag.Parse()
 
 	if showVersion {
@@ -43,7 +45,7 @@ func main() {
 		os.Exit(0)
 		return
 	}
-	if dryRun && reInstall {
+	if dryRun && reinstall {
 		fmt.Println("Can't enable dry run and re-install at the same time!")
 		os.Exit(0)
 		return
@@ -81,7 +83,7 @@ func main() {
 	}
 
 	var updateListCap int
-	if reInstall {
+	if reinstall {
 		updateListCap = len(bins)
 	} else {
 		updateListCap = len(bins) / 3 // Most time large.
@@ -95,7 +97,7 @@ func main() {
 			continue
 		}
 
-		if reInstall {
+		if reinstall {
 			updateList = append(updateList, updateInfo{localInfo.Path, localInfo.Main.Version})
 			continue
 		}
