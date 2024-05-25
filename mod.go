@@ -1,6 +1,7 @@
 package ango
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,8 +20,12 @@ const (
 )
 
 // LatestVersion returns the latest version of module. If there is some problem of using API, it will return error.
-func LatestVersion(module string) (version string, err error) {
-	resp, err := http.Get(fmt.Sprintf(LatestVersionAPI, module))
+func LatestVersion(ctx context.Context, module string) (version string, err error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(LatestVersionAPI, module), nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return "", err
 	}
@@ -40,9 +45,13 @@ func LatestVersion(module string) (version string, err error) {
 	return version, nil
 }
 
-// UnstableVersion gets the test version.
-func UnstableVersion(module string) (version string, err error) {
-	resp, err := http.Get(fmt.Sprintf(VersionListAPI, module))
+// UnstableVersion gets the test version. If not have test version, it will gets the latest version.
+func UnstableVersion(ctx context.Context, module string) (version string, err error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(VersionListAPI, module), nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return "", err
 	}

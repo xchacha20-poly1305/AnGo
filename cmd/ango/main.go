@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"debug/buildinfo"
 	"errors"
 	"flag"
@@ -8,12 +9,15 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/xchacha20-poly1305/ango"
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VERSION = "v0.3.0"
+const VERSION = "v0.4.0"
+
+const timeout = 10 * time.Second
 
 var (
 	trimpath bool
@@ -96,7 +100,9 @@ func main() {
 			continue
 		}
 
-		latestVersion, err := ango.LatestVersion(localInfo.Main.Path)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		latestVersion, err := ango.LatestVersion(ctx, localInfo.Main.Path)
+		cancel()
 		if err != nil {
 			fmt.Printf("⚠️ Failed to get latest version of %s: %v\n", localInfo.Main.Path, err)
 			continue
@@ -141,7 +147,9 @@ type updateInfo struct {
 func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion string) (updateInfo, error) {
 	if remoteVersion == "" {
 		var err error
-		remoteVersion, err = ango.UnstableVersion(localInfo.Main.Path)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		remoteVersion, err = ango.UnstableVersion(ctx, localInfo.Main.Path)
+		cancel()
 		if err != nil {
 			return updateInfo{}, errors.New("up to date")
 		}
