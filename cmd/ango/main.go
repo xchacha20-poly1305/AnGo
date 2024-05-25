@@ -2,6 +2,7 @@ package main
 
 import (
 	"debug/buildinfo"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -75,58 +76,85 @@ func main() {
 		installArgs = append(installArgs, "-v")
 	}
 
+	var updateListCap int
+	if reInstall {
+		updateListCap = len(bins)
+	} else {
+		updateListCap = len(bins) / 3 // Most time large.
+	}
+	updateList := make([]updateInfo, 0, updateListCap)
+
 	for _, bin := range bins {
 		localInfo, err := buildinfo.ReadFile(bin)
 		if err != nil {
-			fmt.Printf("Failed to read exe: %v\n", err)
+			fmt.Printf("⚠️ Failed to read version of %s: %v\n", localInfo.Path, err)
 			continue
 		}
 
-		var latestVersion string
-
-		if !reInstall {
-			latestVersion, err = ango.LatestVersion(localInfo.Main.Path)
-			if err != nil {
-				fmt.Printf("Failed to get latest version of %s: %v\n", localInfo.Path, err)
-				continue
-			}
-
-			switch gvgo.Compare(localInfo.Main.Version, latestVersion) {
-			case 0:
-				fmt.Printf("%s is up to date.\n", localInfo.Path)
-				continue
-			case 1:
-				unstableVersion, err := ango.UnstableVersion(localInfo.Main.Path)
-				if err != nil {
-					fmt.Printf("Faild to get unstable version of %s: %v\n", localInfo.Path, err)
-					continue
-				}
-				if gvgo.Compare(unstableVersion, localInfo.Main.Version) != -1 {
-					fmt.Printf("%s is newer than remote.\n", localInfo.Path)
-					continue
-				}
-				latestVersion = unstableVersion
-			}
-
-			if dryRun {
-				fmt.Printf("%s %s can update to %s\n", localInfo.Path, localInfo.Main.Version, latestVersion)
-				continue
-			}
+		if reInstall {
+			updateList = append(updateList, updateInfo{localInfo.Path, localInfo.Main.Version})
+			continue
 		}
 
-		fmt.Printf("Updating %s %s to %s\n", localInfo.Path, localInfo.Main.Version, latestVersion)
-
-		var writer io.Writer
-		if verbose {
-			writer = os.Stdout
-		} else {
-			writer = io.Discard
-		}
-		err = ango.RunUpdate(localInfo.Path, writer, installArgs...)
+		latestVersion, err := ango.LatestVersion(localInfo.Main.Path)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("⚠️ Failed to get latest version of %s: %v\n", localInfo.Main.Path, err)
 			continue
 		}
 
+		appendable, err := compareLocal(localInfo, latestVersion)
+		if err != nil {
+			fmt.Printf("❓ Try compare version %s: %v\n", localInfo.Path, err)
+			continue
+		}
+
+		updateList = append(updateList, appendable)
 	}
+
+	var output io.Writer
+	if verbose {
+		output = os.Stdout
+	} else {
+		output = io.Discard
+	}
+	for _, update := range updateList {
+		fmt.Printf("🚀 %s can update to %s......\n", update.path, update.targetVersion)
+		if dryRun {
+			continue
+		}
+
+		if err := ango.RunUpdate(update.path, output, installArgs...); err != nil {
+			fmt.Printf("❌ Failed to update %s: %v\n", update.path, err)
+			continue
+		}
+		fmt.Printf("✅ Updated %s to %s\n\n", update.path, update.targetVersion)
+	}
+}
+
+type updateInfo struct {
+	path          string
+	targetVersion string
+}
+
+// compareLocal compares local version and remote.
+// If remoteVersion == "", it will try to get unstable version.
+func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion string) (updateInfo, error) {
+	if remoteVersion == "" {
+		var err error
+		remoteVersion, err = ango.UnstableVersion(localInfo.Main.Path)
+		if err != nil {
+			return updateInfo{}, errors.New("up to date")
+		}
+	}
+
+	switch gvgo.Compare(localInfo.Main.Version, remoteVersion) {
+	case -1:
+		return updateInfo{localInfo.Path, remoteVersion}, nil
+	case 0:
+		return updateInfo{}, errors.New("up to date")
+	case 1:
+		return compareLocal(localInfo, "")
+	}
+
+	return updateInfo{}, errors.New("unknown code")
 }
