@@ -1,4 +1,4 @@
-package goinstallupdate
+package ango
 
 import (
 	"encoding/json"

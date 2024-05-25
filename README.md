@@ -2,26 +2,26 @@
 
 Update all of GOBIN.
 
-Go-install-update provides an easy way to manage your GOBIN. You can install module with `-trimpath` and `-ldflags` flags, and automatically update them.
+AnGo provides an easy way to manage your GOBIN. You can install module with `-trimpath` and `-ldflags` flags, and automatically update them.
 
 # Usage
 
 Install by go:
 
 ```shell
-go install -v -trimpath -ldflags "-w -s -buildid=" github.com/xchacha20-poly1305/go-install-update/cmd/go-install-update@latest
+go install -v -trimpath -ldflags "-w -s -buildid=" github.com/xchacha20-poly1305/ango/cmd/ango@latest
 ```
 
 Build:
 
 ```shell
-go build -v -trimpath -ldflags "-w -s -buildid=" ./cmd/go-install-update/
+go build -v -trimpath -ldflags "-w -s -buildid=" ./cmd/ango/
 ```
 
 command: 
 
-```shell
-Usage of go-install-update:
+```
+Usage of ango:
   -V	Print version.
   -d	Dry run. Just check update.
   -ldflags string

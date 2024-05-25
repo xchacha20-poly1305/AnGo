@@ -8,11 +8,11 @@ import (
 	"os"
 	"path/filepath"
 
-	goinstallupdate "github.com/xchacha20-poly1305/go-install-update"
+	"github.com/xchacha20-poly1305/ango"
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VERSION = "v0.2.0"
+const VERSION = "v0.3.0"
 
 var (
 	trimpath bool
@@ -85,7 +85,7 @@ func main() {
 		var latestVersion string
 
 		if !reInstall {
-			latestVersion, err = goinstallupdate.LatestVersion(localInfo.Main.Path)
+			latestVersion, err = ango.LatestVersion(localInfo.Main.Path)
 			if err != nil {
 				fmt.Printf("Failed to get latest version of %s: %v\n", localInfo.Path, err)
 				continue
@@ -96,7 +96,7 @@ func main() {
 				fmt.Printf("%s is up to date.\n", localInfo.Path)
 				continue
 			case 1:
-				unstableVersion, err := goinstallupdate.UnstableVersion(localInfo.Main.Path)
+				unstableVersion, err := ango.UnstableVersion(localInfo.Main.Path)
 				if err != nil {
 					fmt.Printf("Faild to get unstable version of %s: %v\n", localInfo.Path, err)
 					continue
@@ -122,7 +122,7 @@ func main() {
 		} else {
 			writer = io.Discard
 		}
-		err = goinstallupdate.RunUpdate(localInfo.Path, writer, installArgs...)
+		err = ango.RunUpdate(localInfo.Path, writer, installArgs...)
 		if err != nil {
 			fmt.Println(err)
 			continue
