@@ -16,7 +16,7 @@ import (
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VERSION = "v0.6.0"
+const VERSION = "v0.6.1"
 
 const timeout = 10 * time.Second
 
@@ -97,7 +97,7 @@ func main() {
 		for _, bin := range bins {
 			localInfo, err := buildinfo.ReadFile(bin)
 			if err != nil {
-				fmt.Printf("⚠️ Failed to read version of %s: %v\n", localInfo.Path, err)
+				fmt.Printf("⚠️ Failed to read version of %s: %v\n", bin, err)
 				continue
 			}
 
