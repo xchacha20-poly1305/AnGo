@@ -16,9 +16,12 @@ import (
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VERSION = "v0.6.1"
+const VERSION = "v0.7.0-beta.0"
 
-const timeout = 10 * time.Second
+const (
+	timeout       = 10 * time.Second
+	versionLatest = "latest"
+)
 
 var (
 	trimpath bool
@@ -56,9 +59,18 @@ func main() {
 	if len(flag.Args()) > 0 {
 		updateList = make([]updateInfo, 0, len(flag.Args()))
 		for _, path := range flag.Args() {
+			if validPath(path) {
+				localInfo, err := buildinfo.ReadFile(path)
+				if err != nil {
+					fmt.Printf("⚠️ Failed to read version of %s: %v\n", path, err)
+					continue
+				}
+				updateList = append(updateList, updateInfo{localInfo.Main.Path, versionLatest})
+				continue
+			}
 			pathParts := strings.SplitN(path, "@", 2)
 			if len(pathParts) < 2 || pathParts[1] == "" {
-				pathParts = []string{pathParts[0], "latest"}
+				pathParts = []string{pathParts[0], versionLatest}
 			}
 			updateList = append(updateList, updateInfo{pathParts[0], pathParts[1]})
 		}
