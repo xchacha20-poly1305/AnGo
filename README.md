@@ -1,4 +1,4 @@
-# go-install-update
+# AnGo
 
 Update all of GOBIN.
 
