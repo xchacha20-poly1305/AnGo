@@ -16,7 +16,7 @@ import (
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VERSION = "v0.7.0"
+const VERSION = "v0.7.1"
 
 const (
 	timeout       = 10 * time.Second
@@ -45,18 +45,27 @@ func main() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Printf("Version: %s\n", VERSION)
-		os.Exit(0)
+		printVersion()
 		return
 	}
 	if dryRun && reinstall {
 		fmt.Println("Can't enable dry run and re-install at the same time!")
-		os.Exit(0)
+		os.Exit(1)
 		return
 	}
 
 	var updateList []updateInfo
 	if len(flag.Args()) > 0 {
+		if len(flag.Args()) == 1 {
+			switch flag.Args()[0] {
+			case "v", "version":
+				printVersion()
+				return
+			case "h", "help":
+				flag.Usage()
+				return
+			}
+		}
 		updateList = make([]updateInfo, 0, len(flag.Args()))
 		for _, path := range flag.Args() {
 			if validPath(path) {
@@ -191,4 +200,8 @@ func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion string) (updateI
 	}
 
 	return updateInfo{}, errors.New("unknown code")
+}
+
+func printVersion() {
+	fmt.Printf("Version: %s\n", VERSION)
 }
