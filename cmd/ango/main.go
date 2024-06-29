@@ -16,7 +16,7 @@ import (
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VERSION = "v0.7.0-beta.0"
+const VERSION = "v0.7.0"
 
 const (
 	timeout       = 10 * time.Second
@@ -65,14 +65,24 @@ func main() {
 					fmt.Printf("⚠️ Failed to read version of %s: %v\n", path, err)
 					continue
 				}
-				updateList = append(updateList, updateInfo{localInfo.Main.Path, versionLatest})
+				updateList = append(updateList, updateInfo{
+					path:          localInfo.Main.Path,
+					targetVersion: versionLatest,
+					localVersion:  localInfo.Main.Version,
+				},
+				)
 				continue
 			}
 			pathParts := strings.SplitN(path, "@", 2)
 			if len(pathParts) < 2 || pathParts[1] == "" {
 				pathParts = []string{pathParts[0], versionLatest}
 			}
-			updateList = append(updateList, updateInfo{pathParts[0], pathParts[1]})
+			updateList = append(updateList, updateInfo{
+				path:          pathParts[0],
+				targetVersion: pathParts[1],
+				localVersion:  "local",
+			},
+			)
 		}
 	} else {
 		binDirs := goBins()
@@ -114,7 +124,12 @@ func main() {
 			}
 
 			if reinstall {
-				updateList = append(updateList, updateInfo{localInfo.Path, localInfo.Main.Version})
+				updateList = append(updateList, updateInfo{
+					path:          localInfo.Path,
+					targetVersion: localInfo.Main.Version,
+					localVersion:  localInfo.Main.Version,
+				},
+				)
 				continue
 			}
 
@@ -150,7 +165,7 @@ func main() {
 		output = io.Discard
 	}
 	for _, update := range updateList {
-		fmt.Printf("🚀 %s can update to %s......\n", update.path, update.targetVersion)
+		fmt.Printf("🚀 %s (%s) can update to %s......\n", update.path, update.localVersion, update.targetVersion)
 		if dryRun {
 			continue
 		}
@@ -166,6 +181,7 @@ func main() {
 type updateInfo struct {
 	path          string
 	targetVersion string
+	localVersion  string
 }
 
 // compareLocal compares local version and remote.
@@ -183,7 +199,11 @@ func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion string) (updateI
 
 	switch gvgo.Compare(localInfo.Main.Version, remoteVersion) {
 	case -1:
-		return updateInfo{localInfo.Path, remoteVersion}, nil
+		return updateInfo{
+			path:          localInfo.Path,
+			targetVersion: remoteVersion,
+			localVersion:  localInfo.Main.Version,
+		}, nil
 	case 0:
 		return updateInfo{}, errors.New("up to date")
 	case 1:
