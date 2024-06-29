@@ -16,7 +16,7 @@ import (
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VERSION = "v0.7.0-beta.0"
+const VERSION = "v0.7.0"
 
 const (
 	timeout       = 10 * time.Second
@@ -150,7 +150,7 @@ func main() {
 		output = io.Discard
 	}
 	for _, update := range updateList {
-		fmt.Printf("🚀 %s can update to %s......\n", update.path, update.targetVersion)
+		fmt.Printf("🚀 %s (%s) can update to %s......\n", update.path, update.targetVersion, update.targetVersion)
 		if dryRun {
 			continue
 		}
