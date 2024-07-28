@@ -101,6 +101,7 @@ func RunUpdate(path, version string, output io.Writer, args ...string) error {
 		output = io.Discard
 	}
 	cmd.Stdout = output
+	cmd.Stderr = output
 	_, _ = fmt.Fprintln(output, cmd.Args)
 	return cmd.Run()
 }
