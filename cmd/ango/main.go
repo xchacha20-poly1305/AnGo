@@ -10,7 +10,7 @@ import (
 	"github.com/xchacha20-poly1305/ango"
 )
 
-const VERSION = "v0.8.0"
+const VERSION = "v0.8.1"
 
 const (
 	timeout = 10 * time.Second
@@ -85,7 +85,7 @@ func main() {
 			continue
 		}
 
-		err := ango.RunUpdate(update.path+update.targetVersion, output, os.Stderr, installArgs)
+		err := ango.RunUpdate(update.path+"@"+update.targetVersion, output, os.Stderr, installArgs)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "❌ Failed to update %s: %v\n", update.path, err)
 			continue
