@@ -33,6 +33,11 @@ func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion string) (updateI
 		if err != nil {
 			return updateInfo{}, fmt.Errorf("%s is up to date", localInfo.Path)
 		}
+		return updateInfo{
+			path:          localInfo.Path,
+			targetVersion: remoteVersion,
+			localVersion:  localInfo.Main.Path,
+		}, nil
 	}
 
 	switch gvgo.Compare(localInfo.Main.Version, remoteVersion) {
@@ -123,8 +128,7 @@ func readUpdateInfosFromLocal() ([]updateInfo, error) {
 				path:          localInfo.Path,
 				targetVersion: localInfo.Main.Version,
 				localVersion:  localInfo.Main.Version,
-			},
-			)
+			})
 			continue
 		}
 

@@ -85,11 +85,13 @@ func UnstableVersion(ctx context.Context, module string) (version string, err er
 	}
 	slices.SortFunc(versionList, gvgo.CompareVersion)
 
-	return versionList[len(versionList)-1].String(), nil
+	return "v" + versionList[len(versionList)-1].String(), nil
 }
 
 // RunUpdate use go command to update GOBIN.
+//
 // `path` should with version, like golang.org/dl/go1.22.5@latest
+//
 // `stdout` `stderr` could be nil.
 func RunUpdate(path string, stdout, stderr io.Writer, args []string) error {
 	finalArgs := make([]string, 0, 2+len(args))

@@ -10,10 +10,10 @@ import (
 	"github.com/xchacha20-poly1305/ango"
 )
 
-const VERSION = "v0.8.1"
+const VERSION = "v0.8.2"
 
 const (
-	timeout = 10 * time.Second
+	timeout = 5 * time.Second
 )
 
 var (
