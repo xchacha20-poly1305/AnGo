@@ -88,20 +88,19 @@ func UnstableVersion(ctx context.Context, module string) (version string, err er
 	return versionList[len(versionList)-1].String(), nil
 }
 
-// RunUpdate use go command to update GOBIN. output used to show output.
-func RunUpdate(path, version string, output io.Writer, args ...string) error {
+// RunUpdate use go command to update GOBIN.
+// `path` should with version, like golang.org/dl/go1.22.5@latest
+// `stdout` `stderr` could be nil.
+func RunUpdate(path string, stdout, stderr io.Writer, args []string) error {
 	finalArgs := make([]string, 0, 2+len(args))
 	finalArgs = append(finalArgs, "install")
 	finalArgs = append(finalArgs, args...)
-	finalArgs = append(finalArgs, path+"@"+version)
+	finalArgs = append(finalArgs, path)
 
 	cmd := exec.Command("go", finalArgs...)
 
-	if output == nil {
-		output = io.Discard
-	}
-	cmd.Stdout = output
-	cmd.Stderr = output
-	_, _ = fmt.Fprintln(output, cmd.Args)
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+	_, _ = fmt.Fprintln(stdout, cmd.Args)
 	return cmd.Run()
 }
