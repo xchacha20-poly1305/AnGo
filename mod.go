@@ -103,6 +103,8 @@ func RunUpdate(path string, stdout, stderr io.Writer, args []string) error {
 
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
-	_, _ = fmt.Fprintln(stdout, cmd.Args)
+	if stdout != nil {
+		_, _ = fmt.Fprintln(stdout, cmd.Args)
+	}
 	return cmd.Run()
 }
