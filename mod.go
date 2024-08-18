@@ -83,7 +83,7 @@ func UnstableVersion(ctx context.Context, module string) (version string, err er
 	if len(versionList) == 0 {
 		return "", errors.New("not have version list")
 	}
-	slices.SortFunc(versionList, gvgo.CompareVersion)
+	slices.SortFunc(versionList, gvgo.Compare)
 
 	return "v" + versionList[len(versionList)-1].String(), nil
 }

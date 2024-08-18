@@ -24,27 +24,35 @@ type updateInfo struct {
 
 // compareLocal compares local version and remote.
 // If remoteVersion == "", it will try to get unstable version.
-func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion string) (updateInfo, error) {
-	if remoteVersion == "" {
+func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersionString string) (updateInfo, error) {
+	if remoteVersionString == "" {
 		var err error
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		remoteVersion, err = ango.UnstableVersion(ctx, localInfo.Main.Path)
+		remoteVersionString, err = ango.UnstableVersion(ctx, localInfo.Main.Path)
 		cancel()
 		if err != nil {
 			return updateInfo{}, fmt.Errorf("%s is up to date", localInfo.Path)
 		}
 		return updateInfo{
 			path:          localInfo.Path,
-			targetVersion: remoteVersion,
+			targetVersion: remoteVersionString,
 			localVersion:  localInfo.Main.Path,
 		}, nil
 	}
 
-	switch gvgo.Compare(localInfo.Main.Version, remoteVersion) {
+	localVersion, err := gvgo.Parse(localInfo.Main.Version)
+	if err != nil {
+		return updateInfo{}, fmt.Errorf("failed to parse local version: %w", err)
+	}
+	remoteVersion, err := gvgo.Parse(remoteVersionString)
+	if err != nil {
+		return updateInfo{}, fmt.Errorf("failed to parse remote version: %w", err)
+	}
+	switch gvgo.Compare(localVersion, remoteVersion) {
 	case -1:
 		return updateInfo{
 			path:          localInfo.Path,
-			targetVersion: remoteVersion,
+			targetVersion: remoteVersionString,
 			localVersion:  localInfo.Main.Version,
 		}, nil
 	case 0:
