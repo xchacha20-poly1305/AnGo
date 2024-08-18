@@ -23,42 +23,40 @@ type updateInfo struct {
 }
 
 // compareLocal compares local version and remote.
-// If remoteVersion == "", it will try to get unstable version.
-func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersionString string) (updateInfo, error) {
-	if remoteVersionString == "" {
+//
+// If remoteVersion is nil, it will try to get unstable version.
+// But if remoteVersion is pseudo version, it will return error.
+func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion *gvgo.Version) (updateInfo, error) {
+	if remoteVersion == nil {
+		v := gvgo.New()
+		remoteVersion = &v
 		var err error
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		remoteVersionString, err = ango.UnstableVersion(ctx, localInfo.Main.Path)
+		*remoteVersion, err = ango.UnstableVersion(ctx, localInfo.Main.Path)
 		cancel()
 		if err != nil {
 			return updateInfo{}, fmt.Errorf("%s is up to date", localInfo.Path)
 		}
-		return updateInfo{
-			path:          localInfo.Path,
-			targetVersion: remoteVersionString,
-			localVersion:  localInfo.Main.Path,
-		}, nil
+		if remoteVersion.IsPseudo() {
+			return updateInfo{}, fmt.Errorf("%s is pseudo version", localInfo.Path)
+		}
 	}
 
 	localVersion, err := gvgo.Parse(localInfo.Main.Version)
 	if err != nil {
 		return updateInfo{}, fmt.Errorf("failed to parse local version: %w", err)
 	}
-	remoteVersion, err := gvgo.Parse(remoteVersionString)
-	if err != nil {
-		return updateInfo{}, fmt.Errorf("failed to parse remote version: %w", err)
-	}
-	switch gvgo.Compare(localVersion, remoteVersion) {
+	switch gvgo.Compare(localVersion, *remoteVersion) {
 	case -1:
 		return updateInfo{
 			path:          localInfo.Path,
-			targetVersion: remoteVersionString,
+			targetVersion: "v" + remoteVersion.String(),
 			localVersion:  localInfo.Main.Version,
 		}, nil
 	case 0:
 		return updateInfo{}, errors.New("up to date")
 	case 1:
-		return compareLocal(localInfo, "")
+		return compareLocal(localInfo, nil)
 	}
 
 	return updateInfo{}, errors.New("unknown code")
@@ -148,7 +146,7 @@ func readUpdateInfosFromLocal() ([]updateInfo, error) {
 			continue
 		}
 
-		appendable, err := compareLocal(localInfo, latestVersion)
+		appendable, err := compareLocal(localInfo, &latestVersion)
 		if err != nil {
 			fmt.Printf("❓ Try compare version %s: %v\n", localInfo.Path, err)
 			continue

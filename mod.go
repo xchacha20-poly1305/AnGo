@@ -20,18 +20,18 @@ const (
 )
 
 // LatestVersion returns the latest version of module. If there is some problem of using API, it will return error.
-func LatestVersion(ctx context.Context, module string) (version string, err error) {
+func LatestVersion(ctx context.Context, module string) (version gvgo.Version, err error) {
 	request, err := http.NewRequestWithContext(ctx,
 		http.MethodGet,
 		fmt.Sprintf(LatestVersionAPI, strings.ToLower(module)),
 		nil,
 	)
 	if err != nil {
-		return "", err
+		return gvgo.Version{}, err
 	}
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return "", err
+		return gvgo.Version{}, err
 	}
 	defer resp.Body.Close()
 
@@ -39,18 +39,18 @@ func LatestVersion(ctx context.Context, module string) (version string, err erro
 	var apiResult map[string]any
 	err = json.NewDecoder(resp.Body).Decode(&apiResult)
 	if err != nil {
-		return "", fmt.Errorf("unmashal json: %v", err)
+		return gvgo.Version{}, fmt.Errorf("unmashal json: %v", err)
 	}
 
-	version, success := apiResult["Version"].(string)
+	versionString, success := apiResult["Version"].(string)
 	if !success {
-		return "", fmt.Errorf("not found latest version for %s", module)
+		return gvgo.Version{}, fmt.Errorf("not found latest version for %s", module)
 	}
-	return version, nil
+	return gvgo.Parse(versionString)
 }
 
 // UnstableVersion gets the test version. If not have test version, it will gets the latest version.
-func UnstableVersion(ctx context.Context, module string) (version string, err error) {
+func UnstableVersion(ctx context.Context, module string) (version gvgo.Version, err error) {
 	request, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
@@ -58,17 +58,17 @@ func UnstableVersion(ctx context.Context, module string) (version string, err er
 		nil,
 	)
 	if err != nil {
-		return "", err
+		return gvgo.Version{}, err
 	}
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return "", err
+		return gvgo.Version{}, err
 	}
 	defer resp.Body.Close()
 
 	all, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return gvgo.Version{}, err
 	}
 	list := strings.Split(string(all), "\n")
 
@@ -81,11 +81,11 @@ func UnstableVersion(ctx context.Context, module string) (version string, err er
 		versionList = append(versionList, vs)
 	}
 	if len(versionList) == 0 {
-		return "", errors.New("not have version list")
+		return gvgo.Version{}, errors.New("not have version list")
 	}
 	slices.SortFunc(versionList, gvgo.Compare)
 
-	return "v" + versionList[len(versionList)-1].String(), nil
+	return versionList[len(versionList)-1], nil
 }
 
 // RunUpdate use go command to update GOBIN.
