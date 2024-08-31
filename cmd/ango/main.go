@@ -10,7 +10,7 @@ import (
 	"github.com/xchacha20-poly1305/ango"
 )
 
-const VERSION = "v0.9.0"
+const VERSION = "v0.9.1"
 
 const (
 	timeout = 5 * time.Second
@@ -24,7 +24,7 @@ var (
 	verbose     bool
 	dryRun      bool
 	reinstall   bool
-	pathGoBin   string
+	customGoBin string
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 	flag.StringVar(&ldflags, "ldflags", "-s -w", "")
 	flag.BoolVar(&dryRun, "d", false, "Dry run. Just check update.")
 	flag.BoolVar(&reinstall, "r", false, "Re-install all binaries.")
-	flag.StringVar(&pathGoBin, "p", "", "Path of GOBIN.")
+	flag.StringVar(&customGoBin, "p", "", "Path of GOBIN.")
 	flag.Parse()
 
 	if showVersion {

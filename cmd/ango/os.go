@@ -19,11 +19,12 @@ func fatal(format string, args ...any) {
 
 // goBins returns $GOBIN from env.
 func goBins() []string {
+	home, _ := os.UserHomeDir()
 	binFromEnv := cmp.Or(
-		pathGoBin,
+		customGoBin,
 		os.Getenv("GOBIN"),
 		gopathBin(),
-		"~/go/bin",
+		filepath.Join(home, "go/bin"),
 	)
 	binFromEnv = os.ExpandEnv(binFromEnv)
 	return filepath.SplitList(binFromEnv)
@@ -34,5 +35,5 @@ func gopathBin() string {
 	if !found {
 		return ""
 	}
-	return filepath.Join(gopath, "bin")
+	return gopath
 }
