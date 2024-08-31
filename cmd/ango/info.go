@@ -4,7 +4,6 @@ import (
 	"context"
 	"debug/buildinfo"
 	"errors"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -59,18 +58,13 @@ func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion *gvgo.Version) (
 		return compareLocal(localInfo, nil)
 	}
 
-	return updateInfo{}, errors.New("unknown code")
+	panic("unknown code")
 }
 
 func readUpdateInfoFromArgs(args []string) []updateInfo {
 	updateList := make([]updateInfo, 0, len(args))
-	for _, path := range flag.Args() {
-		if validPath(path) { // Path to local file
-			localInfo, err := buildinfo.ReadFile(path)
-			if err != nil {
-				fmt.Printf("⚠️ Failed to read version of %s: %v\n", path, err)
-				continue
-			}
+	for _, path := range args {
+		if localInfo, err := buildinfo.ReadFile(path); err == nil { // Path to local file
 			updateList = append(updateList, updateInfo{
 				path:          localInfo.Main.Path,
 				targetVersion: latest,
@@ -80,14 +74,14 @@ func readUpdateInfoFromArgs(args []string) []updateInfo {
 		}
 
 		// Path is remote
-		pathParts := strings.SplitN(path, "@", 2)
+		repo, version, _ := strings.Cut(path, "@")
 		// Example golang.org/dl/go1.22.5@latest
-		if len(pathParts) < 2 || pathParts[1] == "" {
-			pathParts = []string{pathParts[0], latest}
+		if version == "" {
+			version = latest
 		}
 		updateList = append(updateList, updateInfo{
-			path:          pathParts[0],
-			targetVersion: pathParts[1],
+			path:          repo,
+			targetVersion: version,
 			localVersion:  "local",
 		})
 	}

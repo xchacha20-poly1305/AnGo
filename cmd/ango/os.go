@@ -7,11 +7,6 @@ import (
 	"path/filepath"
 )
 
-func validPath(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
 func fatal(format string, args ...any) {
 	_, _ = fmt.Fprintf(os.Stderr, format, args...)
 	os.Exit(1)
