@@ -30,5 +30,5 @@ func gopathBin() string {
 	if !found {
 		return ""
 	}
-	return gopath
+	return filepath.Join(gopath, "bin")
 }
