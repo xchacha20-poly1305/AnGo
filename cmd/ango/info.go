@@ -29,19 +29,22 @@ var httpClient = &http.Client{}
 // If remoteVersion is nil, it will try to get unstable version.
 // But if remoteVersion is pseudo version, it will return error.
 func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion *gvgo.Parsed) (updateInfo, error) {
+	var isTryingUnstable bool
 	if remoteVersion == nil {
 		var v gvgo.Parsed
 		remoteVersion = &v
 		var err error
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		*remoteVersion, err = ango.UnstableVersion(ctx, httpClient, localInfo.Main.Path)
+		unstableVersion, err := ango.UnstableVersion(ctx, httpClient, localInfo.Main.Path)
 		cancel()
 		if err != nil {
 			return updateInfo{}, fmt.Errorf("%s is up to date", localInfo.Path)
 		}
-		if remoteVersion.IsBuild() {
+		if unstableVersion.IsBuild() {
 			return updateInfo{}, fmt.Errorf("%s is pseudo version", localInfo.Path)
 		}
+		remoteVersion = &unstableVersion
+		isTryingUnstable = true
 	}
 
 	localVersion, ok := gvgo.New(localInfo.Main.Version)
@@ -58,6 +61,10 @@ func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion *gvgo.Parsed) (u
 	case 0:
 		return updateInfo{}, errors.New("up to date")
 	case 1:
+		if isTryingUnstable {
+			// Prevent loop
+			return updateInfo{}, fmt.Errorf("%s: local version is prior to remote", localInfo.Path)
+		}
 		return compareLocal(localInfo, nil)
 	}
 
