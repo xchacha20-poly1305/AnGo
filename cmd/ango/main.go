@@ -12,7 +12,7 @@ import (
 
 const (
 	NAME      = "ango"
-	VERSION   = "v0.9.3"
+	VERSION   = "v0.10.0"
 	UserAgent = NAME + "/" + VERSION
 
 	VersionLatest = "latest"
