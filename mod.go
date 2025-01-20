@@ -20,18 +20,19 @@ const (
 )
 
 // LatestVersion returns the latest version of module. If there is some problem of using API, it will return error.
-func LatestVersion(ctx context.Context, module string) (version gvgo.Version, err error) {
-	request, err := http.NewRequestWithContext(ctx,
+func LatestVersion(ctx context.Context, module string) (version gvgo.Parsed, err error) {
+	request, err := http.NewRequestWithContext(
+		ctx,
 		http.MethodGet,
 		fmt.Sprintf(LatestVersionAPI, strings.ToLower(module)),
 		nil,
 	)
 	if err != nil {
-		return gvgo.Version{}, err
+		return gvgo.Parsed{}, err
 	}
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return gvgo.Version{}, err
+		return gvgo.Parsed{}, err
 	}
 	defer resp.Body.Close()
 
@@ -39,18 +40,22 @@ func LatestVersion(ctx context.Context, module string) (version gvgo.Version, er
 	var apiResult map[string]any
 	err = json.NewDecoder(resp.Body).Decode(&apiResult)
 	if err != nil {
-		return gvgo.Version{}, fmt.Errorf("unmashal json: %v", err)
+		return gvgo.Parsed{}, fmt.Errorf("unmashal json: %v", err)
 	}
 
-	versionString, success := apiResult["Version"].(string)
-	if !success {
-		return gvgo.Version{}, fmt.Errorf("not found latest version for %s", module)
+	versionString, isStringVersion := apiResult["Version"].(string)
+	if !isStringVersion {
+		return gvgo.Parsed{}, fmt.Errorf("not found latest version for %s", module)
 	}
-	return gvgo.Parse(versionString)
+	version, ok := gvgo.New(versionString)
+	if !ok {
+		return gvgo.Parsed{}, errors.New("got invalid version: " + versionString)
+	}
+	return version, nil
 }
 
 // UnstableVersion gets the test version. If not have test version, it will gets the latest version.
-func UnstableVersion(ctx context.Context, module string) (version gvgo.Version, err error) {
+func UnstableVersion(ctx context.Context, module string) (version gvgo.Parsed, err error) {
 	request, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
@@ -58,30 +63,30 @@ func UnstableVersion(ctx context.Context, module string) (version gvgo.Version, 
 		nil,
 	)
 	if err != nil {
-		return gvgo.Version{}, err
+		return gvgo.Parsed{}, err
 	}
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return gvgo.Version{}, err
+		return gvgo.Parsed{}, err
 	}
 	defer resp.Body.Close()
 
 	all, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return gvgo.Version{}, err
+		return gvgo.Parsed{}, err
 	}
 	list := strings.Split(string(all), "\n")
 
-	versionList := make([]gvgo.Version, 0, len(list))
+	versionList := make([]gvgo.Parsed, 0, len(list))
 	for _, v := range list {
-		vs, err := gvgo.Parse(v)
-		if err != nil {
+		vs, ok := gvgo.New(v)
+		if !ok {
 			continue
 		}
 		versionList = append(versionList, vs)
 	}
 	if len(versionList) == 0 {
-		return gvgo.Version{}, errors.New("not have version list")
+		return gvgo.Parsed{}, errors.New("not have version list")
 	}
 	slices.SortFunc(versionList, gvgo.Compare)
 

@@ -87,7 +87,7 @@ func main() {
 
 		err := ango.RunUpdate(update.path+"@"+update.targetVersion, output, os.Stderr, installArgs)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "❌ Failed to update %s: %v\n", update.path, err)
+			_, _ = fmt.Fprintf(os.Stderr, "❌ Failed to update %s: %v\n", update.path, err)
 			continue
 		}
 		fmt.Printf("✅ Updated %s to %s\n\n", update.path, update.targetVersion)

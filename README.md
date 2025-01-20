@@ -15,7 +15,7 @@ go install -v -trimpath -ldflags "-w -s -buildid=" github.com/xchacha20-poly1305
 Build:
 
 ```shell
-go build -v -trimpath -ldflags "-w -s -buildid=" ./cmd/ango/
+make build
 ```
 
 command: 

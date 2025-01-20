@@ -13,7 +13,7 @@ import (
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const latest = "latest"
+const VersionLatest = "latest"
 
 type updateInfo struct {
 	path          string
@@ -25,9 +25,9 @@ type updateInfo struct {
 //
 // If remoteVersion is nil, it will try to get unstable version.
 // But if remoteVersion is pseudo version, it will return error.
-func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion *gvgo.Version) (updateInfo, error) {
+func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion *gvgo.Parsed) (updateInfo, error) {
 	if remoteVersion == nil {
-		v := gvgo.New()
+		var v gvgo.Parsed
 		remoteVersion = &v
 		var err error
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -36,14 +36,14 @@ func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion *gvgo.Version) (
 		if err != nil {
 			return updateInfo{}, fmt.Errorf("%s is up to date", localInfo.Path)
 		}
-		if remoteVersion.IsPseudo() {
+		if remoteVersion.IsBuild() {
 			return updateInfo{}, fmt.Errorf("%s is pseudo version", localInfo.Path)
 		}
 	}
 
-	localVersion, err := gvgo.Parse(localInfo.Main.Version)
-	if err != nil {
-		return updateInfo{}, fmt.Errorf("failed to parse local version: %w", err)
+	localVersion, ok := gvgo.New(localInfo.Main.Version)
+	if !ok {
+		return updateInfo{}, errors.New("failed to parse local version")
 	}
 	switch gvgo.Compare(localVersion, *remoteVersion) {
 	case -1:
@@ -67,7 +67,7 @@ func readUpdateInfoFromArgs(args []string) []updateInfo {
 		if localInfo, err := buildinfo.ReadFile(path); err == nil { // Path to local file
 			updateList = append(updateList, updateInfo{
 				path:          localInfo.Main.Path,
-				targetVersion: latest,
+				targetVersion: VersionLatest,
 				localVersion:  localInfo.Main.Version,
 			})
 			continue
@@ -77,7 +77,7 @@ func readUpdateInfoFromArgs(args []string) []updateInfo {
 		repo, version, _ := strings.Cut(path, "@")
 		// Example golang.org/dl/go1.22.5@latest
 		if version == "" {
-			version = latest
+			version = VersionLatest
 		}
 		updateList = append(updateList, updateInfo{
 			path:          repo,
