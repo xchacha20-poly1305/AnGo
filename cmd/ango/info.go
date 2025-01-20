@@ -5,6 +5,7 @@ import (
 	"debug/buildinfo"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,6 +22,8 @@ type updateInfo struct {
 	localVersion  string
 }
 
+var httpClient = &http.Client{}
+
 // compareLocal compares local version and remote.
 //
 // If remoteVersion is nil, it will try to get unstable version.
@@ -31,7 +34,7 @@ func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion *gvgo.Parsed) (u
 		remoteVersion = &v
 		var err error
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		*remoteVersion, err = ango.UnstableVersion(ctx, localInfo.Main.Path)
+		*remoteVersion, err = ango.UnstableVersion(ctx, httpClient, localInfo.Main.Path)
 		cancel()
 		if err != nil {
 			return updateInfo{}, fmt.Errorf("%s is up to date", localInfo.Path)
@@ -133,7 +136,7 @@ func readUpdateInfosFromLocal() ([]updateInfo, error) {
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		latestVersion, err := ango.LatestVersion(ctx, localInfo.Main.Path)
+		latestVersion, err := ango.LatestVersion(ctx, httpClient, localInfo.Main.Path)
 		cancel()
 		if err != nil {
 			fmt.Printf("⚠️ Failed to get latest version of %s: %v\n", localInfo.Main.Path, err)

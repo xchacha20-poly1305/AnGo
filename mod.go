@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"slices"
 	"strings"
+	"unsafe"
 
 	"github.com/xchacha20-poly1305/gvgo"
 )
@@ -19,8 +20,12 @@ const (
 	VersionListAPI   = "https://proxy.golang.org/%s/@v/list"
 )
 
-// LatestVersion returns the latest version of module. If there is some problem of using API, it will return error.
-func LatestVersion(ctx context.Context, module string) (version gvgo.Parsed, err error) {
+// LatestVersion returns the latest version of module.
+// httpClient is optional.
+func LatestVersion(ctx context.Context, httpClient *http.Client, module string) (version gvgo.Parsed, err error) {
+	if module == "" {
+		return gvgo.Parsed{}, errors.New("missing module")
+	}
 	request, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
@@ -30,7 +35,10 @@ func LatestVersion(ctx context.Context, module string) (version gvgo.Parsed, err
 	if err != nil {
 		return gvgo.Parsed{}, err
 	}
-	resp, err := http.DefaultClient.Do(request)
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	resp, err := httpClient.Do(request)
 	if err != nil {
 		return gvgo.Parsed{}, err
 	}
@@ -54,8 +62,13 @@ func LatestVersion(ctx context.Context, module string) (version gvgo.Parsed, err
 	return version, nil
 }
 
-// UnstableVersion gets the test version. If not have test version, it will gets the latest version.
-func UnstableVersion(ctx context.Context, module string) (version gvgo.Parsed, err error) {
+// UnstableVersion gets the test version.
+// If not have test version, it will return the latest version.
+// httpClient is optional.
+func UnstableVersion(ctx context.Context, httpClient *http.Client, module string) (version gvgo.Parsed, err error) {
+	if module == "" {
+		return gvgo.Parsed{}, errors.New("missing module name")
+	}
 	request, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
@@ -65,7 +78,10 @@ func UnstableVersion(ctx context.Context, module string) (version gvgo.Parsed, e
 	if err != nil {
 		return gvgo.Parsed{}, err
 	}
-	resp, err := http.DefaultClient.Do(request)
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	resp, err := httpClient.Do(request)
 	if err != nil {
 		return gvgo.Parsed{}, err
 	}
@@ -75,7 +91,7 @@ func UnstableVersion(ctx context.Context, module string) (version gvgo.Parsed, e
 	if err != nil {
 		return gvgo.Parsed{}, err
 	}
-	list := strings.Split(string(all), "\n")
+	list := strings.Split(*(*string)(unsafe.Pointer(&all)), "\n")
 
 	versionList := make([]gvgo.Parsed, 0, len(list))
 	for _, v := range list {
@@ -93,11 +109,11 @@ func UnstableVersion(ctx context.Context, module string) (version gvgo.Parsed, e
 	return versionList[len(versionList)-1], nil
 }
 
-// RunUpdate use go command to update GOBIN.
+// RunUpdate uses `go install` command to update GOBIN.
 //
-// `path` should with version, like golang.org/dl/go1.22.5@latest
+// path should a go module path, like golang.org/dl/go1.22.5@latest
 //
-// `stdout` `stderr` could be nil.
+// stdout and stderr is optional.
 func RunUpdate(path string, stdout, stderr io.Writer, args []string) error {
 	finalArgs := make([]string, 0, 2+len(args))
 	finalArgs = append(finalArgs, "install")
