@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"debug/buildinfo"
 	"errors"
@@ -131,7 +132,7 @@ func readUpdateInfosFromLocal() ([]updateInfo, error) {
 	for _, bin := range bins {
 		localInfo, err := buildinfo.ReadFile(bin)
 		if err != nil {
-			fmt.Printf("⚠️ Failed to read version of %s: %v\n", bin, err)
+			_, _ = fmt.Fprintf(os.Stderr, "⚠️   Failed to read version of %s: %v\n", bin, err)
 			continue
 		}
 
@@ -148,7 +149,7 @@ func readUpdateInfosFromLocal() ([]updateInfo, error) {
 		latestVersion, err := ango.LatestVersion(ctx, httpClient, localInfo.Main.Path)
 		cancel()
 		if err != nil {
-			fmt.Printf("⚠️ Failed to get latest version of %s: %v\n", localInfo.Main.Path, err)
+			_, _ = fmt.Fprintf(os.Stderr, "⚠️Failed to get latest version of %s: %v\n", cmp.Or(localInfo.Main.Path, localInfo.Path, bin), err)
 			continue
 		}
 
