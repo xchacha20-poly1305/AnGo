@@ -35,6 +35,7 @@ func LatestVersion(ctx context.Context, httpClient *http.Client, module string) 
 	if err != nil {
 		return gvgo.Parsed{}, err
 	}
+	setRequest(request)
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
@@ -78,6 +79,7 @@ func UnstableVersion(ctx context.Context, httpClient *http.Client, module string
 	if err != nil {
 		return gvgo.Parsed{}, err
 	}
+	setRequest(request)
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
@@ -107,6 +109,15 @@ func UnstableVersion(ctx context.Context, httpClient *http.Client, module string
 	slices.SortFunc(versionList, gvgo.Compare)
 
 	return versionList[len(versionList)-1], nil
+}
+
+var UserAgent string
+
+func setRequest(request *http.Request) {
+	request.Header.Set("Accept", "application/json")
+	if UserAgent != "" {
+		request.Header.Set("User-Agent", UserAgent)
+	}
 }
 
 // RunUpdate uses `go install` command to update GOBIN.

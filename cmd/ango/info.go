@@ -14,15 +14,17 @@ import (
 	"github.com/xchacha20-poly1305/gvgo"
 )
 
-const VersionLatest = "latest"
-
 type updateInfo struct {
 	path          string
 	targetVersion string
 	localVersion  string
 }
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{
+	Transport: &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+	},
+}
 
 // compareLocal compares local version and remote.
 //

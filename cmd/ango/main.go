@@ -10,11 +10,19 @@ import (
 	"github.com/xchacha20-poly1305/ango"
 )
 
-const VERSION = "v0.9.3"
-
 const (
+	NAME      = "ango"
+	VERSION   = "v0.9.3"
+	UserAgent = NAME + "/" + VERSION
+
+	VersionLatest = "latest"
+
 	timeout = 5 * time.Second
 )
+
+func init() {
+	ango.UserAgent = UserAgent
+}
 
 var (
 	trimpath bool
@@ -95,5 +103,5 @@ func main() {
 }
 
 func printVersion() {
-	fmt.Printf("Version: %s\n", VERSION)
+	fmt.Printf("%s: %s\n", NAME, VERSION)
 }
