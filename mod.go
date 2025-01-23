@@ -56,7 +56,7 @@ func LatestVersion(ctx context.Context, httpClient *http.Client, module string) 
 	if !isStringVersion {
 		return gvgo.Parsed{}, fmt.Errorf("not found latest version for %s", module)
 	}
-	version, ok := gvgo.New(versionString)
+	version, ok := gvgo.Parse(versionString)
 	if !ok {
 		return gvgo.Parsed{}, errors.New("got invalid version: " + versionString)
 	}
@@ -97,7 +97,7 @@ func UnstableVersion(ctx context.Context, httpClient *http.Client, module string
 
 	versionList := make([]gvgo.Parsed, 0, len(list))
 	for _, v := range list {
-		vs, ok := gvgo.New(v)
+		vs, ok := gvgo.Parse(v)
 		if !ok {
 			continue
 		}

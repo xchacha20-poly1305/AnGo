@@ -50,7 +50,7 @@ func compareLocal(localInfo *buildinfo.BuildInfo, remoteVersion *gvgo.Parsed) (u
 		isTryingUnstable = true
 	}
 
-	localVersion, ok := gvgo.New(localInfo.Main.Version)
+	localVersion, ok := gvgo.Parse(localInfo.Main.Version)
 	if !ok {
 		return updateInfo{}, errors.New("failed to parse local version")
 	}
