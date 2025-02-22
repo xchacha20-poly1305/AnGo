@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"slices"
 	"strings"
@@ -132,6 +133,7 @@ func RunUpdate(path string, stdout, stderr io.Writer, args []string) error {
 	finalArgs = append(finalArgs, path)
 
 	cmd := exec.Command("go", finalArgs...)
+	cmd.Env = os.Environ()
 
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
